@@ -1,0 +1,23 @@
+# Python Virtual Environments
+venv/
+.env
+
+# Python Cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Local AI Models downloaded via PyTorch/Piper
+models/
+**/*.onnx
+**/*.onnx.json
+
+# ROS 2 Colcon Build Artifacts (CRITICAL)
+build/
+install/
+log/
+
+# IDEs and OS
+.vscode/
+.idea/
+.DS_Store

@@ -1,0 +1,11 @@
+# Core Machine Learning dependencies
+torch                 # Silero VAD requires PyTorch
+torchaudio            # Silero VAD audio processing
+faster-whisper        # The core ASR (Automatic Speech Recognition)
+piper-tts             # The core TTS (Text-to-Speech)
+
+# Audio hardware interfacing
+sounddevice           # Cross-platform library for recording/playing microphone audio
+soundfile             # Helper for writing/reading wav streams 
+numpy                 # For chunking and reshaping audio data
+openwakeword          # Local offline ONNX keyword spotting

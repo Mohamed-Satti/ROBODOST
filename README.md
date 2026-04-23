@@ -17,6 +17,10 @@ For a full breakdown of the robotics pipeline, consult strings the `docs/` dicti
 
 ## 🚀 Quick Start (Development)
 
+### Windows / Local AI Testing (No ROS)
+To rapidly test standard AI pipeline logic natively on your laptop, navigate to any package's `core/` folder (e.g., `src/robodost_hri/robodost_hri/core/`). These act as Pure-Python sandboxes that decouple hard AI pipelines (like YOLO and Whisper) from ROS networking constraints. Run your virtual environment locally and test using the localized `_pipeline.py` orchestrators.
+
+### Full System Deployment (ROS 2 / Jetson)
 1. Navigate to the deployment utility folder:
    ```bash
    cd system_deploy/

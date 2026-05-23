@@ -2,6 +2,8 @@
 
 **Companion Robot for Disabled Users (All Age Groups)**
 
+[English](README.md) | [Türkçe](README_tr.md)
+
 ROBODOST is a localized, multimodal companion robot built for real-time interaction using ROS2 Humble on an NVIDIA Jetson Orin Nano Super. Designed with safety and accessibility at its core, it supports Turkish sign language processing, responsive speech pipelines, and physical mechatronic control.
 
 ## 📖 Key Features

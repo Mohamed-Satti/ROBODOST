@@ -1,5 +1,7 @@
 # ROS2 Workspace File Structure
 
+[English](file_structure.md) | [Türkçe](file_structure_tr.md)
+
 ROBODOST employs a **"Package-per-Team"** design to ensure isolated development, prevent code-merge conflicts, and allow node clusters to be scaled dynamically based on system memory constraints.
 
 ## Directory Outline

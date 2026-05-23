@@ -1,5 +1,7 @@
 # ROBODOST System Architecture
 
+[English](architecture.md) | [Türkçe](architecture_tr.md)
+
 Target System: **NVIDIA Jetson Orin Nano Super (8GB)**  
 Middleware: **ROS2 Humble**
 

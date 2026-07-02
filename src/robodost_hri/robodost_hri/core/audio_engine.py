@@ -3,6 +3,7 @@ import numpy as np
 import queue
 import subprocess
 import threading
+import urllib.request
 
 class AudioEngine:
     def __init__(self, sample_rate=16000, chunk_size=512, ip_stream_url=None):
@@ -64,11 +65,24 @@ class AudioEngine:
 
     def start_listening(self):
         """Starts the non-blocking audio stream"""
+        use_ip = False
         if self.ip_stream_url:
+            print(f"[AudioEngine] Verifying IP stream {self.ip_stream_url}...")
+            try:
+                # Quickly ping the URL to make sure the phone app is running
+                req = urllib.request.urlopen(self.ip_stream_url, timeout=2.0)
+                req.close()
+                use_ip = True
+                print("[AudioEngine] IP stream is active.")
+            except Exception as e:
+                print(f"[AudioEngine] ⚠️ WARNING: IP stream unreachable ({e}). Falling back to system microphone!")
+                
+        if use_ip:
             self._stop_ffmpeg = False
             self.ffmpeg_thread = threading.Thread(target=self._ffmpeg_reader_thread, daemon=True)
             self.ffmpeg_thread.start()
         else:
+            print("[AudioEngine] Starting local hardware microphone stream...")
             self.stream = sd.InputStream(
                 samplerate=self.sample_rate,
                 channels=1,

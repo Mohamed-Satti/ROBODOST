@@ -1,5 +1,12 @@
+import os
+import sys
 import numpy as np
 import time
+
+# Add robodost_llm to path so we can import it directly for testing
+llm_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../robodost_llm/robodost_llm"))
+sys.path.append(llm_path)
+
 try:
     from .audio_engine import AudioEngine
     from .vad_engine import VadEngine
@@ -12,11 +19,11 @@ except ImportError:
     from asr_engine import AsrEngine
     from tts_engine import TtsEngine
     from wakeword_engine import WakewordEngine
-except ImportError:
-    from audio_engine import AudioEngine
-    from vad_engine import VadEngine
-    from asr_engine import AsrEngine
-    from tts_engine import TtsEngine
+
+try:
+    from llm_engine import LlmEngine
+except ImportError as e:
+    print(f"Warning: Could not import LlmEngine. Error: {e}")
 
 class SpeechPipeline:
     def __init__(self, silence_patience=15):
@@ -26,11 +33,13 @@ class SpeechPipeline:
         (15 chunks * 512 frames @ 16kHz ≈ 0.48 seconds of silence)
         """
         print("Initializing Speech Pipeline Components...")
-        self.audio = AudioEngine()
+        # To go back to using a hardware microphone, simply remove the ip_stream_url parameter
+        self.audio = AudioEngine(ip_stream_url="http://192.168.1.103:8080/audio.wav")
         self.vad = VadEngine()
         self.asr = AsrEngine()
         self.tts = TtsEngine()
         self.wakeword = WakewordEngine()
+        self.llm = LlmEngine()
         
         self.silence_patience = silence_patience
         self.audio_buffer = []
@@ -90,6 +99,7 @@ class SpeechPipeline:
                             self.is_recording = False
                             self.is_awake = False
                             self.audio_buffer = []
+                            self.audio.flush()  # Flush the queue so we don't immediately re-trigger
                             print("\n[SLEEP MODE] Waiting for wakeword 'alexa'...")
 
         except KeyboardInterrupt:
@@ -114,10 +124,13 @@ class SpeechPipeline:
         latency = time.time() - start_time
         
         if text:
-            print(f"\n---> 🤖 Transcript: \"{text}\" (Latency: {latency:.2f}s)\n")
+            print(f"\n---> 🗣️ User: \"{text}\" (ASR Latency: {latency:.2f}s)\n")
             
-            # ECHO BOT LOGIC: The robot will repeat what it heard back to you!
-            self.tts.speak(text)
+            # Send to LLM
+            llm_response = self.llm.generate(text)
+            print(f"\n---> 🤖 ROBODOST: \"{llm_response}\"\n")
+            
+            self.tts.speak(llm_response)
             
             # Flush the mic queue so the pipeline doesn't instantly transcribe the robot's own voice
             self.audio.flush()

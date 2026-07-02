@@ -16,6 +16,10 @@ class VadEngine:
                 force_reload=False,
                 trust_repo=True
             )
+            
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        print(f"[VAD] Loading Silero VAD on {self.device}...")
+        self.model = self.model.to(self.device)
         
         self.get_speech_timestamps, self.save_audio, self.read_audio, self.VADIterator, self.collect_chunks = utils
 
@@ -27,8 +31,8 @@ class VadEngine:
         # Ensure it's a 1D array of floats
         chunk_sq = np.squeeze(chunk)
         
-        # Convert to PyTorch tensor
-        tensor_chunk = torch.from_numpy(chunk_sq)
+        # Convert to PyTorch tensor and move to device
+        tensor_chunk = torch.from_numpy(chunk_sq).to(self.device)
         
         # We must add the batch dimension since the model expects it: [batch_size, sequence_length]
         if tensor_chunk.ndim == 1:

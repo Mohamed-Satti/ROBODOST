@@ -1,11 +1,18 @@
 from faster_whisper import WhisperModel
 import numpy as np
+import torch
 
 class AsrEngine:
-    def __init__(self, model_size="tiny", device="cpu", compute_type="int8"):
+    def __init__(self, model_size="tiny", device=None, compute_type=None):
         """
         As user requested, we use the multilingual model (no '.en' ending).
         """
+        if device is None:
+            device = "cuda" if torch.cuda.is_available() else "cpu"
+        if compute_type is None:
+            compute_type = "float16" if device == "cuda" else "int8"
+            
+        print(f"[ASR] Loading Whisper '{model_size}' on {device} ({compute_type})...")
         self.model = WhisperModel(model_size, device=device, compute_type=compute_type)
 
     def transcribe(self, audio_buffer: np.ndarray) -> str:

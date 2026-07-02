@@ -9,3 +9,4 @@ sounddevice           # Cross-platform library for recording/playing microphone 
 soundfile             # Helper for writing/reading wav streams 
 numpy                 # For chunking and reshaping audio data
 openwakeword          # Local offline ONNX keyword spotting
+openai                # Unified API client for local Ollama and cloud LLMs

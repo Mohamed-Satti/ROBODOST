@@ -1,20 +1,25 @@
+import os
 import numpy as np
 import openwakeword
 from openwakeword.model import Model
 
 class WakewordEngine:
-    def __init__(self, wakeword_phrase="alexa", threshold=0.5):
-        # NOTE: openwakeword will automatically download the pre-trained onnx model for "alexa" to .cache 
+    def __init__(self, wakeword_phrase="robodost", threshold=0.5):
         print(f"Loading WakeWord Engine: [{wakeword_phrase}]")
         openwakeword.utils.download_models() # ensures built-ins are ready
         
-        # TODO: To train a customized "hey robodost" model offline:
-        # Run the scripts from openWakeWord repository. You will just need an ONNX file produced
-        # by their generator and place it into models/ and pass inference_framework=\"onnx\" and 
-        # wakeword_models=[\"models/hey_robodost.onnx\"] to the Model configuration below.
+        # Look for the custom model in the models/ directory
+        custom_model_path = os.path.join(os.path.dirname(__file__), "models", f"{wakeword_phrase}.onnx")
         
-        self.model = Model(wakeword_models=[wakeword_phrase], inference_framework="onnx")
-        self.keyword = wakeword_phrase
+        if os.path.exists(custom_model_path):
+            print(f"Found custom model at {custom_model_path}")
+            self.model = Model(wakeword_models=[custom_model_path], inference_framework="onnx")
+            self.keyword = wakeword_phrase
+        else:
+            print(f"Custom model '{wakeword_phrase}.onnx' not found! Falling back to 'alexa'.")
+            self.model = Model(wakeword_models=["alexa"], inference_framework="onnx")
+            self.keyword = "alexa"
+            
         self.threshold = threshold
 
     def detect(self, chunk_f32: np.ndarray) -> bool:

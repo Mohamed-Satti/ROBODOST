@@ -2,7 +2,9 @@ import os
 from openai import OpenAI
 
 class LlmEngine:
-    def __init__(self, base_url="http://localhost:11434/v1", api_key="ollama", model_name="llama3.2:3B"):
+    def __init__(self, base_url="http://localhost:11434/v1", api_key="ollama", model_name=None):
+        if model_name is None:
+            model_name = os.getenv("ROBODOST_LLM_MODEL", "llama3.2:3B")
         """
         Initializes the LLM Engine using the standard OpenAI client.
         By default, it is configured for a local Ollama server.

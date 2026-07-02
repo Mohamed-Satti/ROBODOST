@@ -29,6 +29,19 @@ class LlmEngine:
             "Do not use markdown formatting, emojis, or lists. Speak naturally."
         )
 
+    def set_model(self, model_name):
+        self.model_name = model_name
+        print(f"[LLM] Model set to: {self.model_name}")
+
+    def get_available_models(self):
+        """Fetches the list of installed models from Ollama."""
+        try:
+            models = self.client.models.list()
+            return [m.id for m in models.data]
+        except Exception as e:
+            print(f"Error fetching models: {e}")
+            return [self.model_name]
+
     def generate(self, user_text):
         """
         Sends the user text to the LLM and returns the generated response.

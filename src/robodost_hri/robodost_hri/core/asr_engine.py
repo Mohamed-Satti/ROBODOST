@@ -14,6 +14,14 @@ class AsrEngine:
             
         print(f"[ASR] Loading Whisper '{model_size}' on {device} ({compute_type})...")
         self.model = WhisperModel(model_size, device=device, compute_type=compute_type)
+        self.language = None # Auto-detect by default
+
+    def set_language(self, language="auto"):
+        if language == "auto":
+            self.language = None
+        else:
+            self.language = language
+        print(f"[ASR] Language set to: {self.language}")
 
     def transcribe(self, audio_buffer: np.ndarray) -> str:
         """
@@ -31,6 +39,7 @@ class AsrEngine:
             audio_buffer, 
             beam_size=5,
             vad_filter=True,
+            language=self.language,
             initial_prompt="Merhaba, hello, how are you? Nasılsın? (This is a Turkish and English conversation)"
         )
 

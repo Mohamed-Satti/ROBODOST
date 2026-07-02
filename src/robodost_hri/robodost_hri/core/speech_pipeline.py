@@ -26,7 +26,7 @@ except ImportError as e:
     print(f"Warning: Could not import LlmEngine. Error: {e}")
 
 class SpeechPipeline:
-    def __init__(self, silence_patience=15):
+    def __init__(self, silence_patience=15, event_callback=None):
         """
         silence_patience: Number of consecutive silent chunks to endure
         before deciding the user has finished speaking.
@@ -41,6 +41,7 @@ class SpeechPipeline:
         self.wakeword = WakewordEngine()
         self.llm = LlmEngine()
         
+        self.event_callback = event_callback
         self.silence_patience = silence_patience
         self.audio_buffer = []
         
@@ -51,12 +52,34 @@ class SpeechPipeline:
         
         print("Pipeline Ready.")
 
+    def _emit(self, event_name, data):
+        if self.event_callback:
+            self.event_callback(event_name, data)
+
+    def get_llm_models(self):
+        return self.llm.get_available_models()
+
+    def update_settings(self, llm_model=None, ip_stream_url=None, asr_lang=None, tts_lang=None):
+        print(f"[Pipeline] Updating settings: LLM={llm_model}, ASR={asr_lang}, TTS={tts_lang}, IP={ip_stream_url}")
+        if llm_model:
+            self.llm.set_model(llm_model)
+        if asr_lang:
+            self.asr.set_language(asr_lang)
+        if tts_lang:
+            self.tts.set_voice(tts_lang)
+        if ip_stream_url is not None and ip_stream_url != self.audio.ip_stream_url:
+            self.audio.stop_listening()
+            self.audio.ip_stream_url = ip_stream_url if ip_stream_url.strip() else None
+            self.audio.start_listening()
+
     def run(self):
         print("Starting microphone stream. Speak into your laptop!")
+        self._emit('status', 'STARTING')
         self.audio.start_listening()
         
         try:
             print("\n[SLEEP MODE] Waiting for wakeword 'alexa'...")
+            self._emit('status', 'ASLEEP')
             while True:
                 chunk = self.audio.get_chunk(block=True)
                 if chunk is None:
@@ -66,6 +89,7 @@ class SpeechPipeline:
                 if not self.is_awake:
                     if self.wakeword.detect(chunk):
                         print("\n[WAKE] Wake word detected! Listening for command...")
+                        self._emit('status', 'LISTENING')
                         self.is_awake = True
                         self.is_recording = True
                         self.silence_frames = 0
@@ -93,6 +117,7 @@ class SpeechPipeline:
                         
                         if self.silence_frames > self.silence_patience:
                             print("\n[VAD] Silence detected. Transcribing...")
+                            self._emit('status', 'THINKING')
                             self._transcribe_buffer()
                             
                             # Return to Sleep State
@@ -101,6 +126,7 @@ class SpeechPipeline:
                             self.audio_buffer = []
                             self.audio.flush()  # Flush the queue so we don't immediately re-trigger
                             print("\n[SLEEP MODE] Waiting for wakeword 'alexa'...")
+                            self._emit('status', 'ASLEEP')
 
         except KeyboardInterrupt:
             print("\nShutting down pipeline.")
@@ -125,10 +151,13 @@ class SpeechPipeline:
         
         if text:
             print(f"\n---> 🗣️ User: \"{text}\" (ASR Latency: {latency:.2f}s)\n")
+            self._emit('transcript', {'role': 'user', 'text': text})
             
             # Send to LLM
             llm_response = self.llm.generate(text)
             print(f"\n---> 🤖 ROBODOST: \"{llm_response}\"\n")
+            self._emit('transcript', {'role': 'robot', 'text': llm_response})
+            self._emit('status', 'SPEAKING')
             
             self.tts.speak(llm_response)
             

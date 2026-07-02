@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ROBODOST Control Dashboard</title>
+    <!-- Use Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css">
+    <!-- Socket.IO library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+</head>
+<body>
+    <div class="background-mesh"></div>
+    
+    <div class="dashboard-container">
+        <!-- Header -->
+        <header class="glass-panel">
+            <div class="logo">
+                <h1>ROBO<span>DOST</span></h1>
+            </div>
+            <div class="status-indicator">
+                <div id="status-orb" class="orb asleep"></div>
+                <span id="status-text">Asleep</span>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Settings Panel -->
+            <aside class="glass-panel settings-panel">
+                <h2>Settings</h2>
+                
+                <div class="input-group">
+                    <label for="llm-model">LLM Model</label>
+                    <select id="llm-model">
+                        <option value="llama3.2:3B">Loading models...</option>
+                    </select>
+                </div>
+                
+                <div class="input-group">
+                    <label for="ip-webcam">IP Webcam URL</label>
+                    <input type="text" id="ip-webcam" value="http://192.168.1.103:8080/audio.wav">
+                </div>
+                
+                <div class="input-group">
+                    <label for="asr-lang">ASR Language (Ears)</label>
+                    <select id="asr-lang">
+                        <option value="auto">Auto-Detect</option>
+                        <option value="tr">Turkish</option>
+                        <option value="en">English</option>
+                    </select>
+                </div>
+
+                <div class="input-group">
+                    <label for="tts-lang">TTS Voice (Mouth)</label>
+                    <select id="tts-lang">
+                        <option value="en">English (Lessac)</option>
+                        <option value="tr">Turkish (DFKI)</option>
+                    </select>
+                </div>
+
+                <button id="update-btn" class="primary-btn">Apply Settings</button>
+            </aside>
+
+            <!-- Chat / Transcript Window -->
+            <section class="glass-panel chat-panel">
+                <h2>Live Transcript</h2>
+                <div id="chat-box" class="chat-box">
+                    <div class="message system">
+                        <p>Waiting for wakeword 'robodost'...</p>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>

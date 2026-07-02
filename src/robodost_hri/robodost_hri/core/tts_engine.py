@@ -10,24 +10,39 @@ class TtsEngine:
         self.model_dir = os.path.join(os.path.dirname(__file__), model_dir)
         os.makedirs(self.model_dir, exist_ok=True)
         
-        # We will use the lessac medium voice as a generic high-quality test voice
-        self.model_name = "en_US-lessac-medium"
-        self.onnx_file = os.path.join(self.model_dir, f"{self.model_name}.onnx")
-        self.json_file = os.path.join(self.model_dir, f"{self.model_name}.onnx.json")
+        # Default voice
+        self.language = "en"
+        self._load_voice("en_US-lessac-medium", "en/en_US/lessac/medium")
+
+    def _load_voice(self, model_name, path_suffix):
+        self.model_name = model_name
+        self.onnx_file = os.path.join(self.model_dir, f"{model_name}.onnx")
+        self.json_file = os.path.join(self.model_dir, f"{model_name}.onnx.json")
+        self.path_suffix = path_suffix
 
         self._ensure_model_exists()
         
-        print("Loading Piper TTS Model...")
+        print(f"[TTS] Loading Piper TTS Model ({model_name})...")
         self.voice = PiperVoice.load(self.onnx_file, config_path=self.json_file)
         self.sample_rate = self.voice.config.sample_rate
+
+    def set_voice(self, language="en"):
+        if language == self.language:
+            return
+            
+        self.language = language
+        if language == "tr":
+            self._load_voice("tr_TR-dfki-medium", "tr/tr_TR/dfki/medium")
+        else:
+            self._load_voice("en_US-lessac-medium", "en/en_US/lessac/medium")
 
     def _ensure_model_exists(self):
         """Downloads the ONNX voice model if it's missing from the models directory."""
         if not os.path.exists(self.onnx_file) or not os.path.exists(self.json_file):
             print(f"Downloading Piper TTS Model ({self.model_name})... This only happens once.")
-            base_url = "https://huggingface.co/rhasspy/piper-voices/resolve/v1.0.0/en/en_US/lessac/medium"
-            urllib.request.urlretrieve(f"{base_url}/en_US-lessac-medium.onnx", self.onnx_file)
-            urllib.request.urlretrieve(f"{base_url}/en_US-lessac-medium.onnx.json", self.json_file)
+            base_url = f"https://huggingface.co/rhasspy/piper-voices/resolve/v1.0.0/{self.path_suffix}"
+            urllib.request.urlretrieve(f"{base_url}/{self.model_name}.onnx", self.onnx_file)
+            urllib.request.urlretrieve(f"{base_url}/{self.model_name}.onnx.json", self.json_file)
 
     def speak(self, text: str):
         """Synthesizes text and plays it directly over laptop speakers."""

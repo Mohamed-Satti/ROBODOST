@@ -94,16 +94,20 @@ class AudioEngine:
 
     def stop_listening(self):
         """Gracefully close the audio stream"""
-        if self.ip_stream_url:
-            self._stop_ffmpeg = True
-            if self.ffmpeg_process:
-                self.ffmpeg_process.terminate()
-            if self.ffmpeg_thread:
-                self.ffmpeg_thread.join(timeout=1.0)
-        else:
-            if self.stream is not None:
-                self.stream.stop()
-                self.stream.close()
+        self._stop_ffmpeg = True
+        
+        if self.ffmpeg_process:
+            self.ffmpeg_process.terminate()
+            self.ffmpeg_process = None
+            
+        if self.ffmpeg_thread:
+            self.ffmpeg_thread.join(timeout=1.0)
+            self.ffmpeg_thread = None
+            
+        if self.stream is not None:
+            self.stream.stop()
+            self.stream.close()
+            self.stream = None
 
     def get_chunk(self, block=True, timeout=None):
         """Pulls the next available chunk out of the queue"""

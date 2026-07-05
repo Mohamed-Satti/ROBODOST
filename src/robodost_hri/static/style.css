@@ -249,3 +249,27 @@ header {
     from { opacity: 0; transform: translateY(20px); }
     to { opacity: 1; transform: translateY(0); }
 }
+
+/* Responsive Design for smaller windows */
+@media (max-width: 800px) {
+    .dashboard-container {
+        height: auto;
+        min-height: 100vh;
+        padding: 1rem;
+    }
+    
+    .main-content {
+        flex-direction: column;
+        overflow: visible;
+    }
+    
+    .settings-panel {
+        max-width: 100%;
+        flex: none;
+    }
+    
+    .chat-panel {
+        min-height: 500px;
+        flex: none;
+    }
+}

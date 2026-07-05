@@ -42,39 +42,95 @@ class LlmEngine:
             print(f"Error fetching models: {e}")
             return [self.model_name]
 
-    def generate(self, user_text):
+    def generate_stream(self, user_text):
         """
-        Sends the user text to the LLM and returns the generated response.
+        Sends the user text to the LLM and yields the response in sentences.
         Maintains a short conversation history.
+        Filters out <think>...</think> blocks automatically.
         """
-        # Append user message to history
+        import re
         self.history.append({"role": "user", "content": user_text})
         
-        # Keep history short to save context window (e.g., last 5 interactions = 10 messages)
         if len(self.history) > 10:
             self.history = self.history[-10:]
 
         messages = [{"role": "system", "content": self.system_prompt}] + self.history
 
         try:
-            print(f"[LLM] Sending to {self.model_name}...")
+            print(f"[LLM] Sending to {self.model_name} (Streaming)...")
             response = self.client.chat.completions.create(
                 model=self.model_name,
                 messages=messages,
                 temperature=0.7,
-                max_tokens=150  # Keep responses short for voice interactions
+                max_tokens=500, # Increased to allow room for model thinking
+                stream=True,
+                extra_body={"options": {"num_ctx": 1024}} # Increased context slightly
             )
             
-            ai_text = response.choices[0].message.content.strip()
+            full_text = ""
+            buffer = ""
+            sentence_buffer = ""
+            in_think_block = False
+
+            for chunk in response:
+                if chunk.choices and len(chunk.choices) > 0 and chunk.choices[0].delta.content:
+                    text_chunk = chunk.choices[0].delta.content
+                    full_text += text_chunk
+                    buffer += text_chunk
+                    
+                    if not in_think_block:
+                        if "<think>" in buffer:
+                            parts = buffer.split("<think>", 1)
+                            sentence_buffer += parts[0]
+                            buffer = parts[1]
+                            in_think_block = True
+                            
+                    if in_think_block:
+                        if "</think>" in buffer:
+                            parts = buffer.split("</think>", 1)
+                            buffer = parts[1]
+                            in_think_block = False
+                        else:
+                            if len(buffer) > 10:
+                                buffer = buffer[-10:]
+                            continue
+                            
+                    if not in_think_block:
+                        last_open = buffer.rfind('<')
+                        if last_open != -1 and "<think>".startswith(buffer[last_open:]):
+                            safe_text = buffer[:last_open]
+                            buffer = buffer[last_open:]
+                        else:
+                            safe_text = buffer
+                            buffer = ""
+                            
+                        sentence_buffer += safe_text
+                        
+                        # Yield when we hit a sentence boundary
+                        matches = list(re.finditer(r'([.!?\n]+)', sentence_buffer))
+                        if matches:
+                            last_match = matches[-1]
+                            split_point = last_match.end()
+                            yield_text = sentence_buffer[:split_point].strip()
+                            if yield_text:
+                                yield yield_text
+                            sentence_buffer = sentence_buffer[split_point:].lstrip()
             
-            # Append AI response to history
-            self.history.append({"role": "assistant", "content": ai_text})
-            
-            return ai_text
+            # Yield any remaining text
+            if sentence_buffer.strip():
+                yield sentence_buffer.strip()
+                
+            self.history.append({"role": "assistant", "content": full_text.strip()})
             
         except Exception as e:
             print(f"[LLM] Error communicating with LLM: {e}")
-            return "I'm sorry, I am having trouble connecting to my brain right now."
+            yield "I'm sorry, I am having trouble connecting to my brain right now."
+
+    def generate(self, user_text):
+        """
+        Backwards compatible generate method that blocks until the stream is complete.
+        """
+        return " ".join(list(self.generate_stream(user_text)))
 
 if __name__ == "__main__":
     # Simple test for the engine

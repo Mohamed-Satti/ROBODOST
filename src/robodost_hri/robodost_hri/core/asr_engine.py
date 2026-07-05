@@ -8,11 +8,19 @@ class AsrEngine:
         As user requested, we use the multilingual model (no '.en' ending).
         """
         if device is None:
-            device = "cuda" if torch.cuda.is_available() else "cpu"
-        if compute_type is None:
-            compute_type = "float16" if device == "cuda" else "int8"
-            
-        print(f"[ASR] Loading Whisper '{model_size}' on {device} ({compute_type})...")
+            # We will aggressively try to load on CUDA first, completely ignoring PyTorch's awareness.
+            # Many Jetson environments have CUDA available for CTranslate2 even if PyTorch is CPU-only.
+            try:
+                print(f"[ASR] Attempting to load Whisper '{model_size}' on CUDA (int8)...")
+                self.model = WhisperModel(model_size, device="cuda", compute_type="int8")
+                print("[ASR] Successfully loaded on CUDA!")
+                self.language = None
+                return
+            except Exception as e:
+                print(f"[ASR] CUDA failed ({e}). Falling back to CPU (int8)...")
+                device = "cpu"
+                compute_type = "int8"
+        
         self.model = WhisperModel(model_size, device=device, compute_type=compute_type)
         self.language = None # Auto-detect by default
 

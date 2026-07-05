@@ -154,12 +154,21 @@ class SpeechPipeline:
             self._emit('transcript', {'role': 'user', 'text': text})
             
             # Send to LLM
-            llm_response = self.llm.generate(text)
-            print(f"\n---> 🤖 ROBODOST: \"{llm_response}\"\n")
-            self._emit('transcript', {'role': 'robot', 'text': llm_response})
+            print(f"\n---> 🤖 ROBODOST: ", end="", flush=True)
             self._emit('status', 'SPEAKING')
             
-            self.tts.speak(llm_response)
+            full_response = ""
+            for chunk in self.llm.generate_stream(text):
+                print(chunk + " ", end="", flush=True)
+                full_response += chunk + " "
+                
+                # Incrementally update UI
+                self._emit('transcript', {'role': 'robot', 'text': full_response})
+                
+                # Speak chunk incrementally
+                self.tts.speak(chunk)
+                
+            print("\n")
             
             # Flush the mic queue so the pipeline doesn't instantly transcribe the robot's own voice
             self.audio.flush()

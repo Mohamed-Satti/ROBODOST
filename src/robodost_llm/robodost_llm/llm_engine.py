@@ -21,13 +21,21 @@ class LlmEngine:
         )
         self.model_name = model_name
         self.history = []
-        
-        # System prompt defines the persona of the robot
-        self.system_prompt = (
+        self.set_language("auto")
+
+    def set_language(self, language="auto"):
+        base_prompt = (
             "You are ROBODOST, a friendly and helpful AI robot assistant. "
             "Keep your answers extremely concise and conversational, as they will be spoken out loud via Text-to-Speech. "
             "Do not use markdown formatting, emojis, or lists. Speak naturally."
         )
+        if language == "tr":
+            self.system_prompt = base_prompt + " IMPORTANT: Always respond strictly in Turkish."
+        elif language == "en":
+            self.system_prompt = base_prompt + " IMPORTANT: Always respond strictly in English."
+        else:
+            self.system_prompt = base_prompt + " IMPORTANT: Respond in the same language the user speaks."
+        print(f"[LLM] Language set to: {language}")
 
     def set_model(self, model_name):
         self.model_name = model_name

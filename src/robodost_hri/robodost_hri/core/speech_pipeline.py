@@ -65,6 +65,8 @@ class SpeechPipeline:
             self.llm.set_model(llm_model)
         if asr_lang:
             self.asr.set_language(asr_lang)
+            if hasattr(self.llm, 'set_language'):
+                self.llm.set_language(asr_lang)
         if tts_lang:
             self.tts.set_voice(tts_lang)
         if ip_stream_url is not None and ip_stream_url != self.audio.ip_stream_url:

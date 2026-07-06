@@ -3,7 +3,7 @@ import numpy as np
 import torch
 
 class AsrEngine:
-    def __init__(self, model_size="tiny", device=None, compute_type=None):
+    def __init__(self, model_size="base", device=None, compute_type=None):
         """
         As user requested, we use the multilingual model (no '.en' ending).
         """
@@ -22,13 +22,18 @@ class AsrEngine:
                 compute_type = "int8"
         
         self.model = WhisperModel(model_size, device=device, compute_type=compute_type)
-        self.language = None # Auto-detect by default
+        self.set_language("auto") # Initialize defaults
 
     def set_language(self, language="auto"):
         if language == "auto":
             self.language = None
+            self.initial_prompt = "Merhaba, hello, how are you? Nasılsın? (This is a Turkish and English conversation)"
+        elif language == "tr":
+            self.language = "tr"
+            self.initial_prompt = "Merhaba, nasılsın? Bu bir Türkçe konuşmasıdır."
         else:
             self.language = language
+            self.initial_prompt = "Hello, how are you? This is an English conversation."
         print(f"[ASR] Language set to: {self.language}")
 
     def transcribe(self, audio_buffer: np.ndarray) -> str:
@@ -48,7 +53,8 @@ class AsrEngine:
             beam_size=5,
             vad_filter=True,
             language=self.language,
-            initial_prompt="Merhaba, hello, how are you? Nasılsın? (This is a Turkish and English conversation)"
+            initial_prompt=self.initial_prompt,
+            condition_on_previous_text=False # Prevents hallucination loops on small models
         )
 
         # Re-assemble segments into single string

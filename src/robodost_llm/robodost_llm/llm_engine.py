@@ -66,6 +66,11 @@ class LlmEngine:
 
         try:
             print(f"[LLM] Sending to {self.model_name} (Streaming)...")
+            import time
+            start_time = time.time()
+            first_token_time = None
+            token_count = 0
+
             response = self.client.chat.completions.create(
                 model=self.model_name,
                 messages=messages,
@@ -82,6 +87,12 @@ class LlmEngine:
 
             for chunk in response:
                 if chunk.choices and len(chunk.choices) > 0 and chunk.choices[0].delta.content:
+                    if first_token_time is None:
+                        first_token_time = time.time()
+                        ttft = first_token_time - start_time
+                        print(f"\n[LLM Metrics] Time To First Token (TTFT): {ttft:.3f}s")
+                        
+                    token_count += 1
                     text_chunk = chunk.choices[0].delta.content
                     full_text += text_chunk
                     buffer += text_chunk
@@ -128,8 +139,16 @@ class LlmEngine:
             if sentence_buffer.strip():
                 yield sentence_buffer.strip()
                 
+            if first_token_time:
+                end_time = time.time()
+                generation_time = end_time - first_token_time
+                if generation_time > 0:
+                    tps = token_count / generation_time
+                    print(f"\n[LLM Metrics] Speed (TPS): {tps:.1f} tokens/sec | Total Tokens: {token_count} | Total Time: {generation_time:.2f}s")
+                
             self.history.append({"role": "assistant", "content": full_text.strip()})
             
+
         except Exception as e:
             print(f"[LLM] Error communicating with LLM: {e}")
             yield "I'm sorry, I am having trouble connecting to my brain right now."
